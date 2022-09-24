@@ -23,6 +23,9 @@
     <None Remove="Roms\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Roms\" />
+    <Folder Include="wwwroot\Roms\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="wwwroot\Roms\IBM Logo.ch8" />
   </ItemGroup>
 </Project>
