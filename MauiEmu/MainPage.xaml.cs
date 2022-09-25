@@ -7,10 +7,15 @@ public partial class MainPage : ContentPage
 {
     public MainPage()
     {
-        InitializeComponent();
-        Task.Run(() => DrawLoop());
+        InitializeComponent();        
         Task.Run(() => InitChip8());
-    }    
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        Task.Run(() => DrawLoop());
+    }
 
     private async Task DrawLoop()
     {
@@ -31,11 +36,10 @@ public partial class MainPage : ContentPage
     }
 
     // Speed
-    private const int ips = 700; // Instructions per second
+    private const int ips = 10; // Instructions per second
 
     // Components
-    private byte[] _memory; // 4kb
-    private BitArray _display; // 64*32px
+    private byte[] _memory; // 4kb    
     private (byte msb, byte lsb)[] _stack; // 16 2bit entries
     private byte[] _regIndex = new byte[2]; // 16bit index reg
     private byte _regDelayTimer; // if above 0, decrease by 1 at 60hz
@@ -70,10 +74,7 @@ public partial class MainPage : ContentPage
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         };
         Buffer.BlockCopy(font, 0x00, _memory, 0x50, 80);
-
-        // Set display
-        _display = new BitArray(new byte[256]); // 64 px wide, 32 px tall. 8 byte wide * 32 = 256 byte.
-
+        
         // Init stack to 16 two byte entries
         _stack = new (byte msb, byte lsb)[16];
 
@@ -84,10 +85,10 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            var rom = await FileSystem.OpenAppPackageFileAsync("IBM logo.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
-            var romArray = ms.ToArray();
+            var romArray = ms.ToArray();            
             Buffer.BlockCopy(romArray, 0, _memory, 0x200, romArray.Length);
 
             // Set program counter to start of program and run
@@ -117,20 +118,18 @@ public partial class MainPage : ContentPage
 
             // Decode and execute
             // Decode instruction to find out what emulator should do
-            int C = instruction.msb >> 4; // First nible, category of instruction
-            int X = instruction.msb << 4; // Second nible, used to look up 1 of 16 registers V0-VF
-            int Y = instruction.lsb >> 4; // Third nibble, used to look up 1 of 16 registers V0-VF
-            int N = instruction.lsb << 4; // Fourth nibble, 4 bit number (0-F)
-            int NN = instruction.lsb; // Second byte, 8 bit immediate number
-            int NNN = instruction.msb << 4 | instruction.lsb; // 12 bit immediate memory address
+            byte C = (byte)(instruction.msb >> 4 & 0xF); // First nible, category of instruction
+            byte X = (byte)(instruction.msb & 0xF); // Second nible, used to look up 1 of 16 registers V0-VF
+            byte Y = (byte)(instruction.lsb >> 4 & 0xF); // Third nibble, used to look up 1 of 16 registers V0-VF
+            byte N = (byte)(instruction.lsb & 0xF); // Fourth nibble, 4 bit number (0-F)
+            byte NN = instruction.lsb; // Second byte, 8 bit immediate number
+            int NNN = X | instruction.lsb; // 12 bit immediate memory address. Does not fit in a byte, go for 32 bit int.
 
             switch (C)
             {
                 case 0x0:
-                    if (X == 0x0 && Y == 0xE && N == 0x0) // 00E0 => clear screen
-                    {
-                        // Skiasharp clear screen
-                    }
+                    // 00E0 => clear screen
+                    Display.Pixels = new bool[64, 32];                    
                     break;
                 case 0x1:
                     // 1NNN => jump to the memory address
@@ -158,7 +157,7 @@ public partial class MainPage : ContentPage
                     break;
                 case 0xA:
                     // ANNN => set index register I
-                    Buffer.BlockCopy(BitConverter.GetBytes(NNN), 0, _regIndex, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NNN), 0, _regIndex, 0, 2);
                     break;
                 case 0xB:
                     break;
@@ -173,21 +172,21 @@ public partial class MainPage : ContentPage
 
                     for (int i = 0; i < N; i++)
                     {
-                        BitArray spriteData = new BitArray(_memory[_regIndex[0] | _regIndex[1]] + i);
+                        byte spriteByte = _memory[(_regIndex[0] | _regIndex[1]) + i]; // byte of the sprite for this row
+                        BitArray spriteData = new BitArray(new byte[] { spriteByte }); // bits to draw
+                        
                         for (int j = 0; j < spriteData.Length; j++)
                         {
-                            bool pixelIsOn = _display[y * 8 + x];
+                            bool pixelIsOn = Display.Pixels[x, y];
                             if (spriteData[j] == true)
                             {
                                 if (pixelIsOn)
-                                {
-                                    _display[y * 8 + x] = false;
+                                {                                    
                                     _regV[0xF] = 0x1;
                                     Display.SetPixel(x, y, false);                                    
                                 }
                                 else
-                                {
-                                    _display[y * 8 + x] = true;
+                                {                                    
                                     Display.SetPixel(x, y, true);
                                 }
                             }
@@ -214,7 +213,12 @@ public partial class MainPage : ContentPage
 
     async Task Draw()
     {
-        //MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
+        MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
+    }
+
+    string DebugInt(int v)
+    {
+        return $"{Convert.ToString(v, 16)} --- {Convert.ToString(v, 2)}";
     }
 }
 
@@ -237,13 +241,6 @@ public class GraphicsDrawable : IDrawable
         }       
     }
 }
-
-public enum GameState
-{
-    Started,
-    Stopped
-}
-
 
 public static class Display
 {

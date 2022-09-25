@@ -48,12 +48,13 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
+
 	<ItemGroup>
-	  <None Remove="Roms\IBM Logo.ch8" />
+	  <None Remove="Resources\Raw\ibm.ch8" />  
 	</ItemGroup>
 
 	<ItemGroup>
-	  <EmbeddedResource Include="Resources\Raw\IBM Logo.ch8" />
+	  <EmbeddedResource Include="Resources\Raw\ibm.ch8" />
 	</ItemGroup>
 
 	<ItemGroup>
