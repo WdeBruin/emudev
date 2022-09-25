@@ -42,7 +42,7 @@ public partial class MainPage : ContentPage
     // Components
     private byte[] _memory; // 4kb    
     private (byte msb, byte lsb)[] _stack; // 16 2bit entries
-    private byte[] _regIndex = new byte[2]; // 16bit index reg
+    private ushort _regIndex = 0; // 16bit index reg
     private byte _regDelayTimer; // if above 0, decrease by 1 at 60hz
     private byte _regSoundTimer; // beeps, works like delaytimer
     private byte[] _regV; // V0 - VF registers, general purpose variable registers
@@ -124,7 +124,7 @@ public partial class MainPage : ContentPage
             byte Y = (byte)(instruction.lsb >> 4 & 0xF); // Third nibble, used to look up 1 of 16 registers V0-VF
             byte N = (byte)(instruction.lsb & 0xF); // Fourth nibble, 4 bit number (0-F)
             byte NN = instruction.lsb; // Second byte, 8 bit immediate number
-            int NNN = X | instruction.lsb; // 12 bit immediate memory address. Does not fit in a byte, go for 32 bit int.
+            ushort NNN = (ushort)((ushort)(X << 8) | ((ushort)(Y << 4)) | ((ushort)N)); // 12 bit immediate memory address. Does not fit in a byte, go for 32 bit int.            
 
             switch (C)
             {
@@ -158,8 +158,8 @@ public partial class MainPage : ContentPage
                 case 0x9:
                     break;
                 case 0xA:
-                    // ANNN => set index register I
-                    Buffer.BlockCopy(BitConverter.GetBytes(NNN), 0, _regIndex, 0, 2);
+                    // ANNN => set index register I                    
+                    _regIndex = NNN;
                     break;
                 case 0xB:
                     break;
@@ -174,7 +174,8 @@ public partial class MainPage : ContentPage
 
                     for (int i = 0; i < N; i++)
                     {
-                        byte spriteByte = _memory[(_regIndex[0] | _regIndex[1]) + i]; // byte of the sprite for this row
+                        // TODO: fix the bits logic here, memory address should be an uint combination                        
+                        byte spriteByte = _memory[_regIndex + i]; // byte of the sprite for this row
                         BitArray spriteData = new BitArray(new byte[] { spriteByte }); // bits to draw
                         
                         for (int j = 0; j < spriteData.Length; j++)
@@ -216,14 +217,15 @@ public partial class MainPage : ContentPage
     }
 
     async Task Draw()
-    {
+    {        
         await Dispatcher.DispatchAsync(() => gView.Invalidate());
+        await Task.Delay(100); // for debug only!
         //MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
     }
 
     string DebugInt(int v)
     {
-        return $"{Convert.ToString(v, 16)} --- {Convert.ToString(v, 2)}";
+        return $"{Convert.ToString(v, 2)}";
     }
 }
 
