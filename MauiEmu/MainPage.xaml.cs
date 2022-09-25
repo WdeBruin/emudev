@@ -7,36 +7,37 @@ public partial class MainPage : ContentPage
 {
     public MainPage()
     {
-        InitializeComponent();        
+        InitializeComponent();
         Task.Run(() => InitChip8());
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        Task.Run(() => DrawLoop());
+        //Task.Run(() => InitChip8());
+        //Task.Run(() => DrawLoop());
     }
 
-    private async Task DrawLoop()
-    {
-        while (true)
-        {
-            try
-            {
-                var elapsed = Stopwatch.StartNew();
-                await Draw();
-                elapsed.Stop();
-                Thread.Sleep(16 - (int)elapsed.ElapsedMilliseconds);
-            }
-            catch (Exception ex)
-            {
+    //private async Task DrawLoop()
+    //{
+    //    while (true)
+    //    {
+    //        try
+    //        {
+    //            var elapsed = Stopwatch.StartNew();
+    //            await Draw();
+    //            elapsed.Stop();
+    //            Thread.Sleep(16 - (int)elapsed.ElapsedMilliseconds);
+    //        }
+    //        catch (Exception ex)
+    //        {
 
-            }
-        }
-    }
+    //        }
+    //    }
+    //}
 
     // Speed
-    private const int ips = 10; // Instructions per second
+    private const int ips = 100; // Instructions per second
 
     // Components
     private byte[] _memory; // 4kb    
@@ -105,7 +106,7 @@ public partial class MainPage : ContentPage
     private async Task StartLoop()
     {
         Stopwatch t = new Stopwatch();
-        float stepTime = 1000 / ips;
+        float stepTime = (float)1000 / ips;
 
         while (true)
         {
@@ -129,7 +130,8 @@ public partial class MainPage : ContentPage
             {
                 case 0x0:
                     // 00E0 => clear screen
-                    Display.Pixels = new bool[64, 32];                    
+                    Display.Pixels = new bool[64, 32];
+                    await Draw();
                     break;
                 case 0x1:
                     // 1NNN => jump to the memory address
@@ -157,7 +159,7 @@ public partial class MainPage : ContentPage
                     break;
                 case 0xA:
                     // ANNN => set index register I
-                Buffer.BlockCopy(BitConverter.GetBytes(NNN), 0, _regIndex, 0, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(NNN), 0, _regIndex, 0, 2);
                     break;
                 case 0xB:
                     break;
@@ -183,11 +185,13 @@ public partial class MainPage : ContentPage
                                 if (pixelIsOn)
                                 {                                    
                                     _regV[0xF] = 0x1;
-                                    Display.SetPixel(x, y, false);                                    
+                                    Display.SetPixel(x, y, false);
+                                    await Draw();
                                 }
                                 else
                                 {                                    
                                     Display.SetPixel(x, y, true);
+                                    await Draw();
                                 }
                             }
                             if (x == 63) break;
@@ -206,14 +210,15 @@ public partial class MainPage : ContentPage
             }
 
             t.Stop();
-            int timeLeft = Math.Max(0, (int)stepTime - (int)t.ElapsedMilliseconds);
-            await Task.Delay(timeLeft);
+            float timeLeft = Math.Max(0, (float)stepTime - t.ElapsedMilliseconds);
+            await Task.Delay((int)timeLeft);
         }
     }
 
     async Task Draw()
     {
-        MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
+        await Dispatcher.DispatchAsync(() => gView.Invalidate());
+        //MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
     }
 
     string DebugInt(int v)
@@ -235,8 +240,13 @@ public class GraphicsDrawable : IDrawable
                 var px = Display.Pixels[x, y];
                 if (px == true)
                 {
-                    canvas.FillRectangle(x * Display.PixelSize, y * Display.PixelSize, Display.PixelSize, Display.PixelSize);
+                    canvas.FillColor = Colors.Green;                    
                 }
+                else
+                {
+                    canvas.FillColor= Colors.Red;
+                }
+                canvas.FillRectangle(x * Display.PixelSize, y * Display.PixelSize, Display.PixelSize, Display.PixelSize);
             }
         }       
     }
