@@ -15,8 +15,8 @@
 
             <GraphicsView
                 x:Name="gView"
-                WidthRequest="640"
-                HeightRequest="320"                
+                WidthRequest="320"
+                HeightRequest="160"                
                 Drawable="{StaticResource GraphicsDrawable}">
             </GraphicsView>            
 

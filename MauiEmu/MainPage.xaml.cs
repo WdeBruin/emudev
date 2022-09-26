@@ -115,6 +115,7 @@ public partial class MainPage : ContentPage
 
             // Fetch            
             (byte msb, byte lsb) instruction = (_memory[_pc], _memory[_pc + 1]); // Fetch instruction from memory at current program counter (PC)
+            Debug.WriteLine($"{_pc}: {DebugInt(instruction.msb)}{DebugInt(instruction.lsb)}");
             _pc += 2; // Increment program counter by 2 bytes
 
             // Decode and execute
@@ -125,7 +126,7 @@ public partial class MainPage : ContentPage
             byte N = (byte)(instruction.lsb & 0xF); // Fourth nibble, 4 bit number (0-F)
             byte NN = instruction.lsb; // Second byte, 8 bit immediate number
             ushort NNN = (ushort)((ushort)(X << 8) | ((ushort)(Y << 4)) | ((ushort)N)); // 12 bit immediate memory address. Does not fit in a byte, go for 32 bit int.            
-
+            
             switch (C)
             {
                 case 0x0:
@@ -181,7 +182,7 @@ public partial class MainPage : ContentPage
                         for (int xd = 0; xd < spriteData.Length; xd++)
                         {
                             bool pixelIsOn = Display.Pixels[xStart + xd, yStart + yd];
-                            if (spriteData[xd] == true)
+                            if (spriteData[7-xd] == true) // reverted draw, start with leas significant bit
                             {
                                 if (pixelIsOn)
                                 {                                    
@@ -223,7 +224,7 @@ public partial class MainPage : ContentPage
 
     string DebugInt(int v)
     {
-        return $"{Convert.ToString(v, 2)}";
+        return $"{Convert.ToString(v, 16)}";
     }
 }
 
@@ -252,7 +253,7 @@ public class GraphicsDrawable : IDrawable
 
 public static class Display
 {
-    public static int PixelSize = 10; // X times 64 * 32 resolution
+    public static int PixelSize = 5; // X times 64 * 32 resolution
     public static bool[,] Pixels { get; set; } = new bool[64, 32];
 
     internal static void SetPixel(int x, int y, bool v)
