@@ -11,43 +11,18 @@ public partial class MainPage : ContentPage
         Task.Run(() => InitChip8());
     }
 
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        //Task.Run(() => InitChip8());
-        //Task.Run(() => DrawLoop());
-    }
-
-    //private async Task DrawLoop()
-    //{
-    //    while (true)
-    //    {
-    //        try
-    //        {
-    //            var elapsed = Stopwatch.StartNew();
-    //            await Draw();
-    //            elapsed.Stop();
-    //            Thread.Sleep(16 - (int)elapsed.ElapsedMilliseconds);
-    //        }
-    //        catch (Exception ex)
-    //        {
-
-    //        }
-    //    }
-    //}
-
     // Speed
     private const int ips = 700; // Instructions per second
 
     // Components
     private byte[] _memory; // 4kb    
-    private (byte msb, byte lsb)[] _stack; // 16 2bit entries
+    Stack<ushort> _stack; 
     private ushort _regIndex = 0; // 16bit index reg
     private byte _regDelayTimer; // if above 0, decrease by 1 at 60hz
     private byte _regSoundTimer; // beeps, works like delaytimer
     private byte[] _regV; // V0 - VF registers, general purpose variable registers
 
-    private int _pc; // Program Counter
+    private ushort _pc; // Program Counter
 
     private async Task InitChip8()
     {
@@ -77,7 +52,7 @@ public partial class MainPage : ContentPage
         Buffer.BlockCopy(font, 0x00, _memory, 0x50, 80);
         
         // Init stack to 16 two byte entries
-        _stack = new (byte msb, byte lsb)[16];
+        _stack = new Stack<ushort>(16);
 
         _regDelayTimer = new byte();
         _regSoundTimer = new byte();
@@ -86,7 +61,8 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -98,8 +74,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-
-            throw;
+            
         }        
     }
 
@@ -129,22 +104,37 @@ public partial class MainPage : ContentPage
             
             switch (C)
             {
-                case 0x0:
-                    // 00E0 => clear screen
-                    Display.Pixels = new bool[64, 32];
-                    await Draw();
+                case 0x0:                    
+                    if (instruction.msb == 0x00 && instruction.lsb == 0xe0) // 00E0 => clear screen
+                    {
+                        Display.Pixels = new bool[64, 32];
+                        await Draw();
+                    }
+                    if (instruction.msb == 0x00 && instruction.lsb == 0xee) // 00EE => pop
+                    {
+                        _pc = _stack.Pop();
+                    }
                     break;
                 case 0x1:
                     // 1NNN => jump to the memory address
                     _pc = NNN;
                     break;
                 case 0x2:
+                    // 2NNN => call memory address (first push to stack pc)
+                    _stack.Push(_pc);
+                    _pc = NNN;
                     break;
                 case 0x3:
+                    // 3XNN => SKip 1 instruction if VX == NN
+                    if (_regV[X] == NN) _pc += 2;
                     break;
                 case 0x4:
+                    // 4XNN => SKip 1 instruction if VX != NN
+                    if (_regV[X] != NN) _pc += 2;
                     break;
                 case 0x5:
+                    // 5XY0 => Skip 1 instruction if VX == VY
+                    if (_regV[X] == _regV[Y]) _pc += 2;
                     break;
                 case 0x6:
                     // 6XNN => set register VX
@@ -155,8 +145,47 @@ public partial class MainPage : ContentPage
                     _regV[X] = (byte)(_regV[X] + NN);
                     break;
                 case 0x8:
+                    switch (N)
+                    {
+                        case 0x0: // 8XY0 => Set
+                            _regV[X] = _regV[Y];
+                            break;
+                        case 0x1: // 8XY1 => Binary OR
+                            _regV[X] = (byte)(_regV[X] | _regV[Y]);
+                            break;
+                        case 0x2: // 8XY2 => Binary AND
+                            _regV[X] = (byte)(_regV[X] & _regV[Y]);
+                            break;
+                        case 0x3: // 8XY3 => Logical XOR
+                            _regV[X] = (byte)(_regV[X] ^ _regV[Y]);
+                            break;
+                        case 0x4: // 8XY4 => Add With carry flag on overflow
+                            if (_regV[X] + _regV[Y] > 255) _regV[0xF] = 0x1;
+                            _regV[X] = (byte)(_regV[X] + _regV[Y]);
+                            break;
+                        case 0x5: // 8XY5 => Subtract VX - VY
+                            _regV[X] = (byte)(_regV[X] - _regV[Y]);
+                            break;
+                        case 0x7: // 8XY7 => Subtract VY - VX
+                            _regV[X] = (byte)(_regV[Y] - _regV[X]);
+                            break;
+                        case 0x6: // 8XY6 => Shift (ambigious)
+                            //_regV[X] = _regV[Y]; // optional, old implementation                            
+                            _regV[0xF] = (byte)(_regV[X] & 1);
+                            _regV[X] = (byte)(_regV[X] >> 1);
+                            break;
+                        case 0xE: // 8XYE => Shift (ambigious)
+                            //_regV[X] = _regV[Y]; // optional, old implementation
+                            _regV[0xF] = (byte)((_regV[X] >> 7) & 1);
+                            _regV[X] = (byte)(_regV[X] << 1);
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 case 0x9:
+                    // 9XY0 => Skip 1 instruction if VX != VY
+                    if (_regV[X] != _regV[Y]) _pc += 2;
                     break;
                 case 0xA:
                     // ANNN => set index register I                    
