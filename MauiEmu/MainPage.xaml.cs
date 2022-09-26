@@ -61,8 +61,9 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
-            //var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("chiptest.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -203,15 +204,13 @@ public partial class MainPage : ContentPage
                     _regV[0xF] = 0x0;
 
                     for (int yd = 0; yd < N; yd++)
-                    {
-                        // TODO: fix the bits logic here, memory address should be an uint combination                        
-                        byte spriteByte = _memory[_regIndex + yd]; // byte of the sprite for this row
-                        BitArray spriteData = new BitArray(new byte[] { spriteByte }); // bits to draw
+                    {                        
+                        byte spriteByte = _memory[_regIndex + yd]; // byte of the sprite for this row                        
                         
-                        for (int xd = 0; xd < spriteData.Length; xd++)
+                        for (int xd = 0; xd < 8; xd++)
                         {
                             bool pixelIsOn = Display.Pixels[xStart + xd, yStart + yd];
-                            if (spriteData[7-xd] == true) // reverted draw, start with leas significant bit
+                            if (((spriteByte >> 7-xd) & 1) == 1) // reverted draw, start with leas significant bit
                             {
                                 if (pixelIsOn)
                                 {                                    

@@ -49,16 +49,12 @@
 	</ItemGroup>
 
 
-	<ItemGroup>
+	<ItemGroup>	  
 	  <None Remove="Resources\Raw\ibm.ch8" />  
 	</ItemGroup>
 
 	<ItemGroup>
 	  <EmbeddedResource Include="Resources\Raw\ibm.ch8" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Roms\" />
 	</ItemGroup>
 
 </Project>
