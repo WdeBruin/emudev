@@ -62,8 +62,8 @@ public partial class MainPage : ContentPage
         try
         {
             //var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
-            //var rom = await FileSystem.OpenAppPackageFileAsync("chiptest.ch8");
-            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("chiptest.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -91,7 +91,7 @@ public partial class MainPage : ContentPage
 
             // Fetch            
             (byte msb, byte lsb) instruction = (_memory[_pc], _memory[_pc + 1]); // Fetch instruction from memory at current program counter (PC)
-            Debug.WriteLine($"{_pc}: {DebugInt(instruction.msb)}{DebugInt(instruction.lsb)}");
+            //Debug.WriteLine($"{_pc}: {DebugInt(instruction.msb)}{DebugInt(instruction.lsb)}");
             _pc += 2; // Increment program counter by 2 bytes
 
             // Decode and execute
@@ -281,7 +281,7 @@ public class GraphicsDrawable : IDrawable
 
 public static class Display
 {
-    public static int PixelSize = 5; // X times 64 * 32 resolution
+    public static int PixelSize = 10; // X times 64 * 32 resolution
     public static bool[,] Pixels { get; set; } = new bool[64, 32];
 
     internal static void SetPixel(int x, int y, bool v)
