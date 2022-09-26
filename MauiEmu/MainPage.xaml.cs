@@ -231,8 +231,6 @@ public class GraphicsDrawable : IDrawable
 {
     public void Draw(ICanvas canvas, RectF dirtyRect)
     {
-        canvas.FillColor = Colors.Green;
-
         for (int y = 0; y < Display.Pixels.GetLength(1); y++)
         {
             for (int x = 0; x < Display.Pixels.GetLength(0); x++)
@@ -240,11 +238,11 @@ public class GraphicsDrawable : IDrawable
                 var px = Display.Pixels[x, y];
                 if (px == true)
                 {
-                    canvas.FillColor = Colors.Green;                    
+                    canvas.FillColor = new Color(2, 91, 24);
                 }
                 else
                 {
-                    canvas.FillColor= Colors.Red;
+                    canvas.FillColor = new Color(104, 104, 104);
                 }
                 canvas.FillRectangle(x * Display.PixelSize, y * Display.PixelSize, Display.PixelSize, Display.PixelSize);
             }
