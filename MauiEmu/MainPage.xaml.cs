@@ -37,7 +37,7 @@ public partial class MainPage : ContentPage
     //}
 
     // Speed
-    private const int ips = 100; // Instructions per second
+    private const int ips = 700; // Instructions per second
 
     // Components
     private byte[] _memory; // 4kb    
@@ -168,38 +168,36 @@ public partial class MainPage : ContentPage
                 case 0xD:
                     // DXYN => display/draw.
                     // Position is register X Y, sprite is at index register I, N pixels tall 
-                    int x = _regV[X] % 64; // wrap
-                    int y = _regV[Y] % 32; // wrap
+                    int xStart = _regV[X] % 64; // wrap
+                    int yStart = _regV[Y] % 32; // wrap
                     _regV[0xF] = 0x0;
 
-                    for (int i = 0; i < N; i++)
+                    for (int yd = 0; yd < N; yd++)
                     {
                         // TODO: fix the bits logic here, memory address should be an uint combination                        
-                        byte spriteByte = _memory[_regIndex + i]; // byte of the sprite for this row
+                        byte spriteByte = _memory[_regIndex + yd]; // byte of the sprite for this row
                         BitArray spriteData = new BitArray(new byte[] { spriteByte }); // bits to draw
                         
-                        for (int j = 0; j < spriteData.Length; j++)
+                        for (int xd = 0; xd < spriteData.Length; xd++)
                         {
-                            bool pixelIsOn = Display.Pixels[x, y];
-                            if (spriteData[j] == true)
+                            bool pixelIsOn = Display.Pixels[xStart + xd, yStart + yd];
+                            if (spriteData[xd] == true)
                             {
                                 if (pixelIsOn)
                                 {                                    
                                     _regV[0xF] = 0x1;
-                                    Display.SetPixel(x, y, false);
+                                    Display.SetPixel(xStart + xd, yStart + yd, false);
                                     await Draw();
                                 }
                                 else
                                 {                                    
-                                    Display.SetPixel(x, y, true);
+                                    Display.SetPixel(xStart + xd, yStart + yd, true);
                                     await Draw();
                                 }
                             }
-                            if (x == 63) break;
-                            x++;
+                            if (xStart+xd == 63) break;
                         }
-                        if (y == 31) break;
-                        y++;
+                        if (yStart+yd == 31) break;
                     }
                     break;
                 case 0xE:
@@ -219,7 +217,7 @@ public partial class MainPage : ContentPage
     async Task Draw()
     {        
         await Dispatcher.DispatchAsync(() => gView.Invalidate());
-        await Task.Delay(100); // for debug only!
+        //await Task.Delay(100); // for debug only!
         //MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
     }
 
