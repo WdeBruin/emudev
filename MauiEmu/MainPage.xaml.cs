@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Diagnostics;
+using System.Windows.Input;
 
 namespace MauiEmu;
 
@@ -21,6 +22,7 @@ public partial class MainPage : ContentPage
     private byte _regDelayTimer; // if above 0, decrease by 1 at 60hz
     private byte _regSoundTimer; // beeps, works like delaytimer
     private byte[] _regV; // V0 - VF registers, general purpose variable registers
+    private char _keyPressed; // If key is pressed its registered here
 
     private ushort _pc; // Program Counter
 
@@ -192,9 +194,11 @@ public partial class MainPage : ContentPage
                     // ANNN => set index register I                    
                     _regIndex = NNN;
                     break;
-                case 0xB:
+                case 0xB: // BNNN of BXNN, ambigious. BNNN implemented. Jump to NNN + regV[0]
+                    _pc = (ushort)(NNN + _regV[0]);
                     break;
                 case 0xC:
+                    _regV[X] = (byte)(new Random().Next(NN) & NN);
                     break;
                 case 0xD:
                     // DXYN => display/draw.
@@ -230,6 +234,21 @@ public partial class MainPage : ContentPage
                     }
                     break;
                 case 0xE:
+                    if (instruction.lsb == 0x9E) // EX9E => skip instruction if key pressed == value in VX
+                    {
+                        if (_keyPressed == _regV[X])
+                        {
+                            _pc += 2;
+                        }
+                    }
+
+                    if (instruction.lsb == 0xA1) // EXA1 => skip instruction if key pressed != value in VX
+                    {
+                        if (_keyPressed != _regV[X])
+                        {
+                            _pc += 2;
+                        }
+                    }
                     break;
                 case 0xF:
                     break;
@@ -254,6 +273,91 @@ public partial class MainPage : ContentPage
     {
         return $"{Convert.ToString(v, 16)}";
     }
+
+    private void Key_Released(object sender, EventArgs e)
+    {
+        _keyPressed = '\0';
+    }
+
+    private void Key1_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x1';
+    }
+
+    private void Key2_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x2';
+    }
+
+    private void Key3_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x3';
+    }
+
+    private void KeyC_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xC';
+    }
+
+    private void Key4_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x4';
+    }
+
+    private void Key5_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x5';
+    }
+
+    private void Key6_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x6';
+    }
+
+    private void KeyD_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xD';
+    }
+
+    private void Key7_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x7';
+    }
+
+    private void Key8_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x8';
+    }
+
+    private void Key9_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x9';
+    }
+
+    private void KeyE_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xE';
+    }
+
+    private void KeyA_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xA';
+    }
+
+    private void Key0_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\x0';
+    }
+
+    private void KeyB_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xB';
+    }
+
+    private void KeyF_Pressed(object sender, EventArgs e)
+    {
+        _keyPressed = '\xF';
+    }
 }
 
 public class GraphicsDrawable : IDrawable
@@ -271,7 +375,8 @@ public class GraphicsDrawable : IDrawable
                 }
                 else
                 {
-                    canvas.FillColor = new Color(104, 104, 104);
+                    //canvas.FillColor = new Color(104, 104, 104);
+                    canvas.FillColor = new Color(255, 255, 255);
                 }
                 canvas.FillRectangle(x * Display.PixelSize, y * Display.PixelSize, Display.PixelSize, Display.PixelSize);
             }
