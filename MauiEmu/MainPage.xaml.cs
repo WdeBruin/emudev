@@ -193,6 +193,11 @@ public partial class MainPage : ContentPage
                             _regV[X] = (byte)(_regV[X] - _regV[Y]);                            
                             break;
                         case 0x7: // 8XY7 => Subtract VY - VX
+                            if (_regV[Y] > _regV[X]) // inverted carry flag set
+                                _regV[0xF] = 0x1;
+                            else
+                                _regV[0xF] = 0x0;
+
                             _regV[X] = (byte)(_regV[Y] - _regV[X]);
                             break;
                         case 0x6: // 8XY6 => Shift (ambigious)
