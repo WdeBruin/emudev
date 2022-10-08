@@ -63,10 +63,7 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            //var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
-            //var rom = await FileSystem.OpenAppPackageFileAsync("Pong.ch8");
-            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
-            //var rom = await FileSystem.OpenAppPackageFileAsync("keypad_test.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("clock.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -442,7 +439,7 @@ public class GraphicsDrawable : IDrawable
                 else
                 {
                     //canvas.FillColor = new Color(104, 104, 104);
-                    canvas.FillColor = new Color(255, 255, 255);
+                    canvas.FillColor = new Color(0, 0, 0);
                 }
                 canvas.FillRectangle(x * Display.PixelSize, y * Display.PixelSize, Display.PixelSize, Display.PixelSize);
             }
