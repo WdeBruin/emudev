@@ -65,8 +65,8 @@ public partial class MainPage : ContentPage
         {
             //var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
             //var rom = await FileSystem.OpenAppPackageFileAsync("Pong.ch8");
-            //var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
-            var rom = await FileSystem.OpenAppPackageFileAsync("keypad_test.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("keypad_test.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            

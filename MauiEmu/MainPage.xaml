@@ -10,7 +10,7 @@
     <ContentPage.Content>
         <StackLayout
         Spacing="25"
-        Padding="30,0"
+        Padding="0,0"
         HorizontalOptions="Start"
         BackgroundColor="LightGray">
 
