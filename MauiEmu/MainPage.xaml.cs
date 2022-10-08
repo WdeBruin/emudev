@@ -6,6 +6,8 @@ namespace MauiEmu;
 
 public partial class MainPage : ContentPage
 {
+    private char? _uiKeyPressed;
+
     public MainPage()
     {
         InitializeComponent();
@@ -63,7 +65,7 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            var rom = await FileSystem.OpenAppPackageFileAsync("clock.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("c8_test.c8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -81,13 +83,17 @@ public partial class MainPage : ContentPage
                 t.Reset();
                 t.Start();
 
+                // Get input
+                _keyPressed = _uiKeyPressed;
+
                 // Decrease timers at 60hz
                 _regDelayTimer = (byte)(_regDelayTimer > 0x0 ? _regDelayTimer - 1 : 0x0);
                 _regSoundTimer = (byte)(_regSoundTimer > 0x0 ? _regSoundTimer - 1 : 0x0);
 
-                // Batch
+                // Batch Execute
                 await StartLoop(batchSizePerHz);
 
+                // Draw
                 await Draw();
 
                 t.Stop();
@@ -179,7 +185,12 @@ public partial class MainPage : ContentPage
                             _regV[X] = (byte)(_regV[X] + _regV[Y]);
                             break;
                         case 0x5: // 8XY5 => Subtract VX - VY
-                            _regV[X] = (byte)(_regV[X] - _regV[Y]);
+                            if (_regV[X] > _regV[Y]) // inverted carry flag set
+                                _regV[0xF] = 0x1;
+                            else
+                                _regV[0xF] = 0x0;
+
+                            _regV[X] = (byte)(_regV[X] - _regV[Y]);                            
                             break;
                         case 0x7: // 8XY7 => Subtract VY - VX
                             _regV[X] = (byte)(_regV[Y] - _regV[X]);
@@ -279,7 +290,13 @@ public partial class MainPage : ContentPage
                             break;
                         case 0x0A: // FX0A => Get key (blocks, waits for key input or loops forever unless key pressed)
                             if (_keyPressed == null)
+                            {
                                 _pc -= 2;
+                            }                                
+                            else
+                            {
+
+                            }
                             break;
                         case 0x29: // FX29: Font character. Set index register to the address of the hexadecimal character in VX
                             var c = _regV[X] & 0xF; // take second nibble as hex char
@@ -339,87 +356,87 @@ public partial class MainPage : ContentPage
 
     private void Key_Released(object sender, EventArgs e)
     {
-        _keyPressed = null;
+        _uiKeyPressed = null;
     }
 
     private void Key1_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x1';
+        _uiKeyPressed = '\x1';
     }
 
     private void Key2_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x2';
+        _uiKeyPressed = '\x2';
     }
 
     private void Key3_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x3';
+        _uiKeyPressed = '\x3';
     }
 
     private void KeyC_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xC';
+        _uiKeyPressed = '\xC';
     }
 
     private void Key4_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x4';
+        _uiKeyPressed = '\x4';
     }
 
     private void Key5_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x5';
+        _uiKeyPressed = '\x5';
     }
 
     private void Key6_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x6';
+        _uiKeyPressed = '\x6';
     }
 
     private void KeyD_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xD';
+        _uiKeyPressed = '\xD';
     }
 
     private void Key7_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x7';
+        _uiKeyPressed = '\x7';
     }
 
     private void Key8_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x8';
+        _uiKeyPressed = '\x8';
     }
 
     private void Key9_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x9';
+        _uiKeyPressed = '\x9';
     }
 
     private void KeyE_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xE';
+        _uiKeyPressed = '\xE';
     }
 
     private void KeyA_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xA';
+        _uiKeyPressed = '\xA';
     }
 
     private void Key0_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\x0';
+        _uiKeyPressed = '\x0';
     }
 
     private void KeyB_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xB';
+        _uiKeyPressed = '\xB';
     }
 
     private void KeyF_Pressed(object sender, EventArgs e)
     {
-        _keyPressed = '\xF';
+        _uiKeyPressed = '\xF';
     }
 }
 
