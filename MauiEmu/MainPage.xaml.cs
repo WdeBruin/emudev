@@ -73,7 +73,29 @@ public partial class MainPage : ContentPage
 
             // Set program counter to start of program and run
             _pc = 0x200;
-            await StartLoop();
+
+            // Timing and running
+            int instructionsPerSecond = 700;
+            int batchSizePerHz = instructionsPerSecond / 60;
+
+            while (true)
+            {
+                Stopwatch t = new Stopwatch();
+                t.Reset();
+                t.Start();
+
+                // Decrease timers at 60hz
+                _regDelayTimer = (byte)(_regDelayTimer > 0x0 ? _regDelayTimer - 1 : 0x0);
+                _regSoundTimer = (byte)(_regSoundTimer > 0x0 ? _regSoundTimer - 1 : 0x0);
+
+                // Batch
+                await StartLoop(batchSizePerHz);
+
+                await Draw();
+
+                t.Stop();
+                await Task.Delay(1000 / 60 - (int)t.ElapsedMilliseconds);                
+            }            
         }
         catch (Exception ex)
         {
@@ -81,22 +103,14 @@ public partial class MainPage : ContentPage
         }        
     }
 
-    private async Task StartLoop()
+    private async Task StartLoop(int batchSize = 0)
     {
-        Stopwatch t = new Stopwatch();
-        float stepTime = (float)1000 / ips;
-
         while (true)
         {
-            t.Reset();
-            t.Start();
-
             // Fetch            
             (byte msb, byte lsb) instruction = (_memory[_pc], _memory[_pc + 1]); // Fetch instruction from memory at current program counter (PC)
             
-            _pc += 2; // Increment program counter by 2 bytes
-            _regDelayTimer = (byte)(_regDelayTimer > 0x0 ? _regDelayTimer - 1 : 0x0);
-            _regSoundTimer = (byte)(_regSoundTimer > 0x0 ? _regSoundTimer - 1 : 0x0);
+            _pc += 2; // Increment program counter by 2 bytes            
 
             // Decode and execute
             // Decode instruction to find out what emulator should do
@@ -113,7 +127,6 @@ public partial class MainPage : ContentPage
                     if (instruction.msb == 0x00 && instruction.lsb == 0xe0) // 00E0 => clear screen
                     {
                         Display.Pixels = new bool[64, 32];
-                        await Draw();
                     }
                     if (instruction.msb == 0x00 && instruction.lsb == 0xee) // 00EE => pop
                     {
@@ -221,13 +234,11 @@ public partial class MainPage : ContentPage
                                 if (pixelIsOn)
                                 {                                    
                                     _regV[0xF] = 0x1;
-                                    Display.SetPixel(xStart + xd, yStart + yd, false);
-                                    await Draw();
+                                    Display.SetPixel(xStart + xd, yStart + yd, false);                                    
                                 }
                                 else
                                 {                                    
-                                    Display.SetPixel(xStart + xd, yStart + yd, true);
-                                    await Draw();
+                                    Display.SetPixel(xStart + xd, yStart + yd, true);                                    
                                 }
                             }
                             if (xStart+xd == 63) break;
@@ -315,19 +326,13 @@ public partial class MainPage : ContentPage
                     break;
                 default:
                     break;
-            }
-
-            t.Stop();
-            float timeLeft = Math.Max(0, (float)stepTime - t.ElapsedMilliseconds);
-            await Task.Delay((int)timeLeft);
+            }                      
         }
     }
 
     async Task Draw()
     {        
         await Dispatcher.DispatchAsync(() => gView.Invalidate());
-        //await Task.Delay(100); // for debug only!
-        //MainThread.BeginInvokeOnMainThread(() => gView.Invalidate());
     }
 
     string DebugInt(int v)
