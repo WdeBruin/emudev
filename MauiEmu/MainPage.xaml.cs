@@ -93,8 +93,10 @@ public partial class MainPage : ContentPage
 
             // Fetch            
             (byte msb, byte lsb) instruction = (_memory[_pc], _memory[_pc + 1]); // Fetch instruction from memory at current program counter (PC)
-            //Debug.WriteLine($"{_pc}: {DebugInt(instruction.msb)}{DebugInt(instruction.lsb)}");
+            
             _pc += 2; // Increment program counter by 2 bytes
+            _regDelayTimer = (byte)(_regDelayTimer > 0x0 ? _regDelayTimer - 1 : 0x0);
+            _regSoundTimer = (byte)(_regSoundTimer > 0x0 ? _regSoundTimer - 1 : 0x0);
 
             // Decode and execute
             // Decode instruction to find out what emulator should do
@@ -251,6 +253,65 @@ public partial class MainPage : ContentPage
                     }
                     break;
                 case 0xF:
+                    switch (instruction.lsb)
+                    {
+                        case 0x07: // FX07 => Set VX to the current value of the delay timer
+                            _regV[X] = _regDelayTimer;
+                            break;
+                        case 0x15: // FX15 => Set delay timer to the value in VX
+                            _regDelayTimer = _regV[X];
+                            break;
+                        case 0x18: // FX18 => Set sound timer to the value in VX
+                            _regSoundTimer = _regV[X];
+                            break;
+                        case 0x1E: // FX1E => Add to index
+                            _regIndex += _regV[X];
+                            if (_regIndex >= 0x1000) // For spaceflight 2091, amiga interpreter behavior that should not break anything
+                                _regV[0xF] = 0x1;
+                            break;
+                        case 0x0A: // FX0A => Get key (blocks, waits for key input or loops forever unless key pressed)
+                            if (_keyPressed == '\0')
+                                _pc -= 2;
+                            break;
+                        case 0x29: // FX29: Font character. Set index register to the address of the hexadecimal character in VX
+                            var c = _regV[X] & 0xF; // take second nibble as hex char
+                            ushort addressOfChar = (ushort)(c * 5 + 0x50);
+                            _regIndex = addressOfChar;
+                            break;
+                        case 0x33: // FX33: Binary coded decimal conversion
+                            ushort n = _regV[X];
+                            
+                            if (n / 100 >= 1) // three digits
+                            {
+                                _memory[_regIndex+2] = (byte)(n % 10);
+                                _memory[_regIndex+1] = (byte)((n - _memory[_regIndex+2]) / 10 % 10);
+                                _memory[_regIndex] = (byte)((n - _memory[_regIndex+2]) / 10 / 10);
+                            }
+                            else if (n / 10 >= 1) // two digits
+                            {
+                                _memory[_regIndex+1] = (byte)(n % 10);
+                                _memory[_regIndex] = (byte)((n - _memory[_regIndex+1]) / 10);
+                            }
+                            else // 1 digit
+                            {
+                                _memory[_regIndex] = (byte)n;
+                            }
+                            break;
+                        case 0x55: // FX55 Store registers to memory ambiguous
+                            for (int i = 0; i < X; i++)
+                            {
+                                _memory[_regIndex+i] = _regV[i];
+                            }
+                            break;
+                        case 0x65: // FX65 load registers from memory ambiguous
+                            for (int i = 0; i < X; i++)
+                            {
+                                _regV[i] = _memory[_regIndex+i];
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 default:
                     break;
