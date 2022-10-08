@@ -65,7 +65,7 @@ public partial class MainPage : ContentPage
         // Load program at 0x200
         try
         {
-            var rom = await FileSystem.OpenAppPackageFileAsync("c8_test.c8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("tetris.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -297,10 +297,6 @@ public partial class MainPage : ContentPage
                             if (_keyPressed == null)
                             {
                                 _pc -= 2;
-                            }                                
-                            else
-                            {
-
                             }
                             break;
                         case 0x29: // FX29: Font character. Set index register to the address of the hexadecimal character in VX

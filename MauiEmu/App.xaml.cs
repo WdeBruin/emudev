@@ -7,7 +7,7 @@ using Windows.Graphics;
 namespace MauiEmu;
 public partial class App : Application
 {
-    const int WindowWidth = 640;
+    const int WindowWidth = 650;
     const int WindowHeight = 700;
 
     public App()
