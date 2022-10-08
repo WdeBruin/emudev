@@ -309,13 +309,13 @@ public partial class MainPage : ContentPage
                             }
                             break;
                         case 0x55: // FX55 Store registers to memory ambiguous
-                            for (int i = 0; i < X; i++)
+                            for (int i = 0; i <= X; i++)
                             {
                                 _memory[_regIndex+i] = _regV[i];
                             }
                             break;
                         case 0x65: // FX65 load registers from memory ambiguous
-                            for (int i = 0; i < X; i++)
+                            for (int i = 0; i <= X; i++)
                             {
                                 _regV[i] = _memory[_regIndex+i];
                             }
