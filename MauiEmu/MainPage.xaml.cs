@@ -22,7 +22,7 @@ public partial class MainPage : ContentPage
     private byte _regDelayTimer; // if above 0, decrease by 1 at 60hz
     private byte _regSoundTimer; // beeps, works like delaytimer
     private byte[] _regV; // V0 - VF registers, general purpose variable registers
-    private char _keyPressed; // If key is pressed its registered here
+    private char? _keyPressed; // If key is pressed its registered here
 
     private ushort _pc; // Program Counter
 
@@ -64,8 +64,9 @@ public partial class MainPage : ContentPage
         try
         {
             //var rom = await FileSystem.OpenAppPackageFileAsync("test_opcode.ch8");
-            var rom = await FileSystem.OpenAppPackageFileAsync("chiptest.ch8");
+            //var rom = await FileSystem.OpenAppPackageFileAsync("Pong.ch8");
             //var rom = await FileSystem.OpenAppPackageFileAsync("ibm.ch8");
+            var rom = await FileSystem.OpenAppPackageFileAsync("keypad_test.ch8");
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();            
@@ -74,9 +75,8 @@ public partial class MainPage : ContentPage
             // Set program counter to start of program and run
             _pc = 0x200;
 
-            // Timing and running
-            int instructionsPerSecond = 700;
-            int batchSizePerHz = instructionsPerSecond / 60;
+            // Timing and running            
+            int batchSizePerHz = ips / 60;
 
             while (true)
             {
@@ -94,7 +94,7 @@ public partial class MainPage : ContentPage
                 await Draw();
 
                 t.Stop();
-                await Task.Delay(1000 / 60 - (int)t.ElapsedMilliseconds);                
+                await Task.Delay(Math.Max(0, 1000 / 60 - (int)t.ElapsedMilliseconds));
             }            
         }
         catch (Exception ex)
@@ -105,7 +105,7 @@ public partial class MainPage : ContentPage
 
     private async Task StartLoop(int batchSize = 0)
     {
-        while (true)
+        for (int ins = 0; ins < batchSize; ins++)
         {
             // Fetch            
             (byte msb, byte lsb) instruction = (_memory[_pc], _memory[_pc + 1]); // Fetch instruction from memory at current program counter (PC)
@@ -281,7 +281,7 @@ public partial class MainPage : ContentPage
                                 _regV[0xF] = 0x1;
                             break;
                         case 0x0A: // FX0A => Get key (blocks, waits for key input or loops forever unless key pressed)
-                            if (_keyPressed == '\0')
+                            if (_keyPressed == null)
                                 _pc -= 2;
                             break;
                         case 0x29: // FX29: Font character. Set index register to the address of the hexadecimal character in VX
@@ -342,7 +342,7 @@ public partial class MainPage : ContentPage
 
     private void Key_Released(object sender, EventArgs e)
     {
-        _keyPressed = '\0';
+        _keyPressed = null;
     }
 
     private void Key1_Pressed(object sender, EventArgs e)
