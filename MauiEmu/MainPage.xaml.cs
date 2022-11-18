@@ -1,13 +1,10 @@
 ﻿using MauiEmu.Emulator.Chip8;
-using System.Collections;
-using System.Diagnostics;
-using System.Windows.Input;
 
 namespace MauiEmu;
 
 public partial class MainPage : ContentPage
 {
-    private Chip8 _chip8 = new Chip8();
+    private Chip8 _chip8;
 
     public MainPage()
     {
@@ -15,6 +12,10 @@ public partial class MainPage : ContentPage
         Task.Run(() => Load());
     }
 
+    /// <summary>
+    /// Load selected ROM and start chip8
+    /// </summary>
+    /// <returns></returns>
     private async Task Load()
     {   
         // Load program at 0x200
@@ -25,6 +26,7 @@ public partial class MainPage : ContentPage
             rom.CopyTo(ms);
             var romArray = ms.ToArray();
 
+            _chip8 = new Chip8();
             await _chip8.LoadRomAndStart(romArray, gView);
         }
         catch (Exception ex)
