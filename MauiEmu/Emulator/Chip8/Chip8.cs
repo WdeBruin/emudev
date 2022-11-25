@@ -43,7 +43,7 @@ public class Chip8
         Buffer.BlockCopy(font, 0x00, _memory, 0x50, 80);
     }
 
-    public async Task LoadRomAndStart(byte[] rom, GraphicsView gView)
+    public async Task LoadRomAndStart(byte[] rom)
     {
         // Load to memory
         Buffer.BlockCopy(rom, 0, _memory, 0x200, rom.Length); 
@@ -71,8 +71,7 @@ public class Chip8
             await ExecuteInstructionBatch(batchSizePerHz);
 
             // Draw
-            gView.Invalidate();
-            // await Dispatcher.GetForCurrentThread().DispatchAsync(() => gView.Invalidate());            
+            MessagingCenter.Send(this, "draw");
 
             t.Stop();
             await Task.Delay(Math.Max(0, 1000 / 60 - (int)t.ElapsedMilliseconds));

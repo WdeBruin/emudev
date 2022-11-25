@@ -8,7 +8,14 @@ public partial class MainPage : ContentPage
 
     public MainPage()
     {
-        InitializeComponent();   
+        InitializeComponent(); 
+        
+        _chip8 = new Chip8();
+        MessagingCenter.Subscribe<Chip8>(this, "draw", (sender) =>
+        {
+            MainThread.InvokeOnMainThreadAsync(() => gView.Invalidate());           
+        });
+
         Task.Run(() => Load());
     }
 
@@ -25,9 +32,8 @@ public partial class MainPage : ContentPage
             var ms = new MemoryStream();
             rom.CopyTo(ms);
             var romArray = ms.ToArray();
-
-            _chip8 = new Chip8();
-            await _chip8.LoadRomAndStart(romArray, gView);
+            
+            await _chip8.LoadRomAndStart(romArray);
         }
         catch (Exception ex)
         {
