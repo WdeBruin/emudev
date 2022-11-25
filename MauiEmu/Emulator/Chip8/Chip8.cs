@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using System.Diagnostics;
 
 namespace MauiEmu.Emulator.Chip8;
 
@@ -71,7 +72,7 @@ public class Chip8
             await ExecuteInstructionBatch(batchSizePerHz);
 
             // Draw
-            MessagingCenter.Send(this, "draw");
+            StrongReferenceMessenger.Default.Send(new DrawMessage("draw"));
 
             t.Stop();
             await Task.Delay(Math.Max(0, 1000 / 60 - (int)t.ElapsedMilliseconds));

@@ -1,4 +1,5 @@
-﻿using MauiEmu.Emulator.Chip8;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using MauiEmu.Emulator.Chip8;
 
 namespace MauiEmu;
 
@@ -11,10 +12,10 @@ public partial class MainPage : ContentPage
         InitializeComponent(); 
         
         _chip8 = new Chip8();
-        MessagingCenter.Subscribe<Chip8>(this, "draw", (sender) =>
+        StrongReferenceMessenger.Default.Register<DrawMessage>(this, (sender, args) =>
         {
-            MainThread.InvokeOnMainThreadAsync(() => gView.Invalidate());           
-        });
+            MainThread.InvokeOnMainThreadAsync(() => gView.Invalidate());
+        });       
 
         Task.Run(() => Load());
     }
